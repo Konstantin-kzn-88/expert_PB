@@ -12,7 +12,7 @@ except ImportError:
     print("pip install pandas openpyxl")
     sys.exit(1)
 
-FILE_NAME = "Д-2.xlsx"
+FILE_NAME = "Д-5.xlsx"
 OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"]
 
 
