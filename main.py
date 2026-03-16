@@ -12,14 +12,78 @@ except ImportError:
     print("pip install pandas openpyxl")
     sys.exit(1)
 
-FILE_NAME = "Д-5.xlsx"
 OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"]
 
 
-class QuizApp:
+class FileSelectApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Тест")
+        self.root.title("Выбор теста")
+        self.root.resizable(False, False)
+
+        self.selected_file = None
+        self.build_ui()
+
+    def build_ui(self):
+        self.root.configure(padx=20, pady=20)
+
+        tk.Label(
+            self.root,
+            text="Выберите файл с вопросами:",
+            font=("Arial", 14, "bold")
+        ).pack(pady=(0, 14))
+
+        base_dir = Path(__file__).resolve().parent
+        xlsx_files = sorted(base_dir.glob("*.xlsx"))
+
+        if not xlsx_files:
+            tk.Label(
+                self.root,
+                text="Нет .xlsx файлов рядом с программой.",
+                font=("Arial", 12),
+                fg="red"
+            ).pack()
+            tk.Button(
+                self.root,
+                text="Выход",
+                command=self.root.destroy,
+                width=12
+            ).pack(pady=(14, 0))
+            return
+
+        btn_frame = tk.Frame(self.root)
+        btn_frame.pack()
+
+        for xlsx in xlsx_files:
+            name = xlsx.name
+            tk.Button(
+                btn_frame,
+                text=name,
+                font=("Arial", 13),
+                width=28,
+                command=lambda f=xlsx: self.launch(f)
+            ).pack(fill="x", pady=4)
+
+        tk.Button(
+            self.root,
+            text="Выход",
+            command=self.root.destroy,
+            width=12,
+            font=("Arial", 11)
+        ).pack(pady=(14, 0))
+
+    def launch(self, file_path):
+        self.root.destroy()
+        root2 = tk.Tk()
+        QuizApp(root2, file_path)
+        root2.mainloop()
+
+
+class QuizApp:
+    def __init__(self, root, file_path: Path):
+        self.root = root
+        self.file_path = file_path
+        self.root.title(f"Тест — {file_path.name}")
         self.root.geometry("1000x720")
         self.root.minsize(950, 680)
 
@@ -50,17 +114,15 @@ class QuizApp:
         self.show_question()
 
     def load_questions(self):
-        file_path = Path(__file__).resolve().parent / FILE_NAME
-
-        if not file_path.exists():
+        if not self.file_path.exists():
             messagebox.showerror(
                 "Ошибка",
-                f"Файл '{FILE_NAME}' не найден.\nПоложите его рядом с программой."
+                f"Файл '{self.file_path.name}' не найден.\nПоложите его рядом с программой."
             )
             sys.exit(1)
 
         try:
-            df = pd.read_excel(file_path)
+            df = pd.read_excel(self.file_path)
         except ImportError:
             messagebox.showerror(
                 "Ошибка",
@@ -172,6 +234,13 @@ class QuizApp:
         )
         self.next_button.pack(side="left", padx=10)
 
+        tk.Button(
+            button_frame,
+            text="← Сменить файл",
+            command=self.back_to_select,
+            width=16
+        ).pack(side="left", padx=10)
+
         self.exit_button = tk.Button(
             button_frame,
             text="Выход",
@@ -179,6 +248,12 @@ class QuizApp:
             width=10
         )
         self.exit_button.pack(side="right")
+
+    def back_to_select(self):
+        self.root.destroy()
+        root2 = tk.Tk()
+        FileSelectApp(root2)
+        root2.mainloop()
 
     def shuffle_answers(self, question_row):
         answers = []
@@ -354,7 +429,7 @@ class QuizApp:
 
 def main():
     root = tk.Tk()
-    QuizApp(root)
+    FileSelectApp(root)
     root.mainloop()
 
 
